@@ -1,121 +1,217 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const IvCalcApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class IvCalcApp extends StatelessWidget {
+  const IvCalcApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '수액 속도 계산기',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const IvCalcHome(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class IvCalcHome extends StatefulWidget {
+  const IvCalcHome({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<IvCalcHome> createState() => _IvCalcHomeState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _IvCalcHomeState extends State<IvCalcHome> {
+  final _volumeController = TextEditingController();
+  final _hourController = TextEditingController();
+  final _minuteController = TextEditingController();
+  
+  double _dropFactor = 20.0; // 기본 점적수 (20 gtt/ml)
+  
+  double _gttPerMin = 0.0;
+  double _mlPerHour = 0.0;
+  double _secPerDrop = 0.0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  void _calculate() {
+    double volume = double.tryParse(_volumeController.text) ?? 0.0;
+    double hours = double.tryParse(_hourController.text) ?? 0.0;
+    double minutes = double.tryParse(_minuteController.text) ?? 0.0;
+    
+    double totalMinutes = (hours * 60) + minutes;
+
+    if (totalMinutes > 0 && volume > 0) {
+      setState(() {
+        _gttPerMin = (volume * _dropFactor) / totalMinutes;
+        _mlPerHour = (volume / totalMinutes) * 60;
+        _secPerDrop = _gttPerMin > 0 ? 60 / _gttPerMin : 0.0;
+      });
+    } else {
+      setState(() {
+        _gttPerMin = 0.0;
+        _mlPerHour = 0.0;
+        _secPerDrop = 0.0;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('수액 속도 계산기', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _volumeController.clear();
+                _hourController.clear();
+                _minuteController.clear();
+                _dropFactor = 20.0;
+                _calculate();
+              });
+            },
+          ),
+        ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            // 입력 섹션
+            _buildInputSection(),
+            const SizedBox(height: 24),
+            
+            // 결과 섹션
+            _buildResultSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('수액 정보 입력', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _volumeController,
+              decoration: const InputDecoration(
+                labelText: '총 수액량 (ml)',
+                border: OutlineInputBorder(),
+                suffixText: 'ml',
+              ),
+              keyboardType: TextInputType.number,
+              onChanged: (_) => _calculate(),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _hourController,
+                    decoration: const InputDecoration(
+                      labelText: '시간',
+                      border: OutlineInputBorder(),
+                      suffixText: 'hr',
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _calculate(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _minuteController,
+                    decoration: const InputDecoration(
+                      labelText: '분',
+                      border: OutlineInputBorder(),
+                      suffixText: 'min',
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => _calculate(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('점적수 (Drop Factor)', style: TextStyle(fontSize: 14)),
+            Row(
+              children: [
+                _dropFactorRadio(15),
+                _dropFactorRadio(20),
+                _dropFactorRadio(60),
+              ],
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+
+  Widget _dropFactorRadio(double value) {
+    return Row(
+      children: [
+        Radio<double>(
+          value: value,
+          groupValue: _dropFactor,
+          onChanged: (newValue) {
+            setState(() {
+              _dropFactor = newValue!;
+              _calculate();
+            });
+          },
+        ),
+        Text('${value.toInt()} gtt'),
+      ],
+    );
+  }
+
+  Widget _buildResultSection() {
+    return Column(
+      children: [
+        _resultCard('분당 방울 수 (gtt/min)', _gttPerMin.toStringAsFixed(1), 'gtt/min', Colors.blue),
+        const SizedBox(height: 12),
+        _resultCard('시간당 주입량 (ml/hr)', _mlPerHour.toStringAsFixed(1), 'ml/hr', Colors.green),
+        const SizedBox(height: 12),
+        _resultCard('방울 간격 (Drop Interval)', _secPerDrop.toStringAsFixed(2), '초(sec)', Colors.orange),
+      ],
+    );
+  }
+
+  Widget _resultCard(String title, String value, String unit, Color color) {
+    return Card(
+      color: color.withOpacity(0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+                Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
