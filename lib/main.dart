@@ -1,61 +1,90 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 void main() {
-  runApp(const IvCalcApp());
+  runApp(const ClinicalCalcApp());
 }
 
-class IvCalcApp extends StatelessWidget {
-  const IvCalcApp({super.key});
+class ClinicalCalcApp extends StatelessWidget {
+  const ClinicalCalcApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '수액 속도 계산기',
+      title: '스마트 임상 계산기',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo, primary: Colors.indigo),
         useMaterial3: true,
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
       ),
-      home: const IvCalcHome(),
+      home: const MainNavigationScreen(),
     );
   }
 }
 
-class IvCalcHome extends StatefulWidget {
-  const IvCalcHome({super.key});
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
 
   @override
-  State<IvCalcHome> createState() => _IvCalcHomeState();
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _IvCalcHomeState extends State<IvCalcHome> {
-  final _volumeController = TextEditingController();
-  final _hourController = TextEditingController();
-  final _minuteController = TextEditingController();
-  
-  double _dropFactor = 20.0; // 기본 점적수 (20 gtt/ml)
-  
-  double _gttPerMin = 0.0;
-  double _mlPerHour = 0.0;
-  double _secPerDrop = 0.0;
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _selectedIndex = 0;
 
-  void _calculate() {
-    double volume = double.tryParse(_volumeController.text) ?? 0.0;
-    double hours = double.tryParse(_hourController.text) ?? 0.0;
-    double minutes = double.tryParse(_minuteController.text) ?? 0.0;
-    
-    double totalMinutes = (hours * 60) + minutes;
+  final List<Widget> _screens = [
+    const IvRateScreen(),
+    const DilutionScreen(),
+    const RemainingTimeScreen(),
+    const MedicalToolScreen(),
+  ];
 
-    if (totalMinutes > 0 && volume > 0) {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.indigo,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: '수액속도'),
+          BottomNavigationBarItem(icon: Icon(Icons.medication), label: '약물희석'),
+          BottomNavigationBarItem(icon: Icon(Icons.timer), label: '잔여시간'),
+          BottomNavigationBarItem(icon: Icon(Icons.calculate), label: '건강지표'),
+        ],
+      ),
+    );
+  }
+}
+
+// --- 1. 수액 속도 계산기 ---
+class IvRateScreen extends StatefulWidget {
+  const IvRateScreen({super.key});
+  @override
+  State<IvRateScreen> createState() => _IvRateScreenState();
+}
+
+class _IvRateScreenState extends State<IvRateScreen> {
+  final _volCtrl = TextEditingController();
+  final _hrCtrl = TextEditingController();
+  final _minCtrl = TextEditingController();
+  double _dropFactor = 20.0;
+  double _gtt = 0, _mlHr = 0, _sec = 0;
+
+  void _calc() {
+    double vol = double.tryParse(_volCtrl.text) ?? 0;
+    double totalMin = ((double.tryParse(_hrCtrl.text) ?? 0) * 60) + (double.tryParse(_minCtrl.text) ?? 0);
+    if (totalMin > 0 && vol > 0) {
       setState(() {
-        _gttPerMin = (volume * _dropFactor) / totalMinutes;
-        _mlPerHour = (volume / totalMinutes) * 60;
-        _secPerDrop = _gttPerMin > 0 ? 60 / _gttPerMin : 0.0;
-      });
-    } else {
-      setState(() {
-        _gttPerMin = 0.0;
-        _mlPerHour = 0.0;
-        _secPerDrop = 0.0;
+        _gtt = (vol * _dropFactor) / totalMin;
+        _mlHr = (vol / totalMin) * 60;
+        _sec = _gtt > 0 ? 60 / _gtt : 0;
       });
     }
   }
@@ -63,156 +92,219 @@ class _IvCalcHomeState extends State<IvCalcHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('수액 속도 계산기', style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() {
-                _volumeController.clear();
-                _hourController.clear();
-                _minuteController.clear();
-                _dropFactor = 20.0;
-                _calculate();
-              });
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('수액 속도 계산'), backgroundColor: Colors.indigo[50]),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 입력 섹션
-            _buildInputSection(),
-            const SizedBox(height: 24),
-            
-            // 결과 섹션
-            _buildResultSection(),
-          ],
-        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          _buildInputCard([
+            _rowInput('총 수액량', _volCtrl, 'ml', _calc),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(child: _rowInput('시간', _hrCtrl, 'hr', _calc)),
+              const SizedBox(width: 12),
+              Expanded(child: _rowInput('분', _minCtrl, 'min', _calc)),
+            ]),
+            const SizedBox(height: 12),
+            const Text('점적수 (Drop Factor)', style: TextStyle(fontSize: 12)),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [15.0, 20.0, 60.0].map((v) => 
+              Row(children: [
+                Radio<double>(value: v, groupValue: _dropFactor, onChanged: (val) => setState(() { _dropFactor = val!; _calc(); })),
+                Text('${v.toInt()} gtt')
+              ])).toList()),
+          ]),
+          const SizedBox(height: 20),
+          _resultCard('분당 방울 수', _gtt.toStringAsFixed(1), 'gtt/min', Colors.blue),
+          _resultCard('시간당 주입량', _mlHr.toStringAsFixed(1), 'ml/hr', Colors.green),
+          _resultCard('방울 간격', _sec.toStringAsFixed(2), '초/방울', Colors.orange),
+        ]),
       ),
     );
   }
+}
 
-  Widget _buildInputSection() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('수액 정보 입력', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _volumeController,
-              decoration: const InputDecoration(
-                labelText: '총 수액량 (ml)',
-                border: OutlineInputBorder(),
-                suffixText: 'ml',
-              ),
-              keyboardType: TextInputType.number,
-              onChanged: (_) => _calculate(),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _hourController,
-                    decoration: const InputDecoration(
-                      labelText: '시간',
-                      border: OutlineInputBorder(),
-                      suffixText: 'hr',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => _calculate(),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _minuteController,
-                    decoration: const InputDecoration(
-                      labelText: '분',
-                      border: OutlineInputBorder(),
-                      suffixText: 'min',
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => _calculate(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text('점적수 (Drop Factor)', style: TextStyle(fontSize: 14)),
-            Row(
-              children: [
-                _dropFactorRadio(15),
-                _dropFactorRadio(20),
-                _dropFactorRadio(60),
-              ],
-            ),
-          ],
-        ),
+// --- 2. 약물 희석 계산기 (Dosage) ---
+class DilutionScreen extends StatefulWidget {
+  const DilutionScreen({super.key});
+  @override
+  State<DilutionScreen> createState() => _DilutionScreenState();
+}
+
+class _DilutionScreenState extends State<DilutionScreen> {
+  final _desiredCtrl = TextEditingController(); // 처방량
+  final _haveCtrl = TextEditingController();    // 보유량
+  final _volCtrl = TextEditingController();     // 보유용적
+  double _resultMl = 0;
+
+  void _calc() {
+    double d = double.tryParse(_desiredCtrl.text) ?? 0;
+    double h = double.tryParse(_haveCtrl.text) ?? 0;
+    double v = double.tryParse(_volCtrl.text) ?? 0;
+    if (h > 0) setState(() => _resultMl = (d / h) * v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('약물 용량/희석'), backgroundColor: Colors.teal[50]),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          _buildInputCard([
+            _rowInput('처방 용량 (Desired)', _desiredCtrl, 'mg/mcg', _calc),
+            const SizedBox(height: 12),
+            _rowInput('약물 함량 (Have)', _haveCtrl, 'mg/mcg', _calc),
+            const SizedBox(height: 12),
+            _rowInput('약물 용적 (Volume)', _volCtrl, 'ml', _calc),
+          ]),
+          const SizedBox(height: 30),
+          const Text('투여(추출)할 약물 용량', style: TextStyle(fontSize: 16)),
+          Text('${_resultMl.toStringAsFixed(2)} ml', 
+            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal)),
+          const Text('수식: (처방량 / 보유량) × 보유용적', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ]),
       ),
     );
   }
+}
 
-  Widget _dropFactorRadio(double value) {
-    return Row(
-      children: [
-        Radio<double>(
-          value: value,
-          groupValue: _dropFactor,
-          onChanged: (newValue) {
-            setState(() {
-              _dropFactor = newValue!;
-              _calculate();
-            });
-          },
-        ),
-        Text('${value.toInt()} gtt'),
-      ],
-    );
+// --- 3. 잔여 시간 계산기 ---
+class RemainingTimeScreen extends StatefulWidget {
+  const RemainingTimeScreen({super.key});
+  @override
+  State<RemainingTimeScreen> createState() => _RemainingTimeScreenState();
+}
+
+class _RemainingTimeScreenState extends State<RemainingTimeScreen> {
+  final _remainVolCtrl = TextEditingController();
+  final _rateCtrl = TextEditingController();
+  String _timeLeft = "0시간 0분";
+  String _endTime = "-";
+
+  void _calc() {
+    double vol = double.tryParse(_remainVolCtrl.text) ?? 0;
+    double rate = double.tryParse(_rateCtrl.text) ?? 0;
+    if (rate > 0) {
+      double hours = vol / rate;
+      int h = hours.floor();
+      int m = ((hours - h) * 60).round();
+      setState(() {
+        _timeLeft = "$h시간 $m분";
+        _endTime = TimeOfDay.fromDateTime(DateTime.now().add(Duration(minutes: (hours * 60).round()))).format(context);
+      });
+    }
   }
 
-  Widget _buildResultSection() {
-    return Column(
-      children: [
-        _resultCard('분당 방울 수 (gtt/min)', _gttPerMin.toStringAsFixed(1), 'gtt/min', Colors.blue),
-        const SizedBox(height: 12),
-        _resultCard('시간당 주입량 (ml/hr)', _mlPerHour.toStringAsFixed(1), 'ml/hr', Colors.green),
-        const SizedBox(height: 12),
-        _resultCard('방울 간격 (Drop Interval)', _secPerDrop.toStringAsFixed(2), '초(sec)', Colors.orange),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('수액 잔여 시간'), backgroundColor: Colors.orange[50]),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          _buildInputCard([
+            _rowInput('남은 수액량', _remainVolCtrl, 'ml', _calc),
+            const SizedBox(height: 12),
+            _rowInput('현재 주입 속도', _rateCtrl, 'ml/hr', _calc),
+          ]),
+          const SizedBox(height: 30),
+          _resultCard('남은 시간', _timeLeft, '후 종료', Colors.orange),
+          _resultCard('예상 완료 시각', _endTime, '', Colors.deepOrange),
+        ]),
+      ),
     );
   }
+}
 
-  Widget _resultCard(String title, String value, String unit, Color color) {
-    return Card(
+// --- 4. 건강 지표 (BMI/BSA) ---
+class MedicalToolScreen extends StatefulWidget {
+  const MedicalToolScreen({super.key});
+  @override
+  State<MedicalToolScreen> createState() => _MedicalToolScreenState();
+}
+
+class _MedicalToolScreenState extends State<MedicalToolScreen> {
+  final _heightCtrl = TextEditingController();
+  final _weightCtrl = TextEditingController();
+  double _bmi = 0, _bsa = 0;
+
+  void _calc() {
+    double h = (double.tryParse(_heightCtrl.text) ?? 0) / 100; // cm to m
+    double w = double.tryParse(_weightCtrl.text) ?? 0;
+    if (h > 0 && w > 0) {
+      setState(() {
+        _bmi = w / (h * h);
+        _bsa = sqrt(((h * 100) * w) / 3600); // Mosteller formula
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('BMI & BSA 계산'), backgroundColor: Colors.blueGrey[50]),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(children: [
+          _buildInputCard([
+            _rowInput('신장 (Height)', _heightCtrl, 'cm', _calc),
+            const SizedBox(height: 12),
+            _rowInput('체중 (Weight)', _weightCtrl, 'kg', _calc),
+          ]),
+          const SizedBox(height: 30),
+          Row(children: [
+            Expanded(child: _resultCard('BMI (지수)', _bmi.toStringAsFixed(1), 'kg/m²', Colors.blueGrey)),
+            const SizedBox(width: 10),
+            Expanded(child: _resultCard('BSA (체표면적)', _bsa.toStringAsFixed(2), 'm²', Colors.indigo)),
+          ]),
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('※ BSA는 Mosteller 공식을 사용합니다.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          )
+        ]),
+      ),
+    );
+  }
+}
+
+// --- 공통 위젯들 ---
+Widget _buildInputCard(List<Widget> children) {
+  return Card(
+    elevation: 0,
+    color: Colors.grey[100],
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Padding(padding: const EdgeInsets.all(16), child: Column(children: children)),
+  );
+}
+
+Widget _rowInput(String label, TextEditingController ctrl, String suffix, VoidCallback onChanged) {
+  return TextField(
+    controller: ctrl,
+    decoration: InputDecoration(labelText: label, suffixText: suffix, filled: true, fillColor: Colors.white),
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    onChanged: (_) => onChanged(),
+  );
+}
+
+Widget _resultCard(String title, String value, String unit, Color color) {
+  return Container(
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 10),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
       color: color.withOpacity(0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-                Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withOpacity(0.3)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color.withOpacity(0.8))),
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+          const SizedBox(width: 4),
+          Text(unit, style: TextStyle(fontSize: 12, color: color.withOpacity(0.7))),
+        ]),
+      ],
+    ),
+  );
 }
