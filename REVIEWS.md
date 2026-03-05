@@ -24,3 +24,20 @@
 - [ ] The drop factor (drops/ml) isn't available anymore with the last update. Please fix it
 - [ ] I am not able to build custom lists. The input fields are all overlapping and can't read or input any data.
 - [ ] Very good app but can't chamge theme. I Will rate 5 star if this app can change to dark theme.
+
+
+시장에 대한 질문 답변:
+
+사용자 분의 의심이 상당히 타당합니다.
+
+앱 시장이 작은 이유:
+
+대형병원은 이미 EMR(전자의무기록) 시스템 도입 — 국내는 Bestcare, 오라클 등이 주요 병원에 깔려 있고, IV 계산 기능이 내장되어 있습니다
+수액 펌프 자체에 계산 기능 내장 — 현대적인 인퓨전 펌프는 용량/속도 설정이 기기에서 이루어집니다
+의료 앱은 책임 문제 — 잘못된 계산 결과에 대한 법적 부담 때문에 병원이 직원에게 비공식 앱 사용을 권장하지 않습니다
+그럼에도 틈새 시장은 있습니다:
+
+요양병원, 소규모 의원, 방문간호 — EMR 없이 운영하는 곳
+간호학과 학생 — 국가고시, 실습 준비용 계산 연습
+빠른 계산이 필요한 응급 상황 — EMR 열기 번거로울 때 보조 수단
+결론적으로 "시장이 작다"는 인식이 맞고, 그래서 앱 수도 적은 겁니다. 다만 학생 + 소규모 의료기관 타겟으로 명확히 포지셔닝한다면 충분히 의미 있는 틈새입니다.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/iv_rate_screen.dart';
 import '../screens/dilution_screen.dart';
 import '../screens/remaining_time_screen.dart';
+import '../screens/tapping_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -17,6 +18,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const IvRateScreen(),
     const DilutionScreen(),
     const RemainingTimeScreen(),
+    const TappingScreen(),
   ];
 
   @override
@@ -33,6 +35,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: '수액속도'),
           BottomNavigationBarItem(icon: Icon(Icons.medication), label: '약물희석'),
           BottomNavigationBarItem(icon: Icon(Icons.timer), label: '잔여시간'),
+          BottomNavigationBarItem(icon: Icon(Icons.touch_app), label: '태핑측정'),
         ],
       ),
     );
