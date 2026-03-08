@@ -93,6 +93,10 @@ class _TappingScreenState extends State<TappingScreen>
             tooltip: '초기화',
             onPressed: _reset,
           ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDisclaimerDialog(context),
+          ),
         ],
       ),
       body: SingleChildScrollView(

@@ -23,7 +23,16 @@ class _DilutionScreenState extends State<DilutionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('약물 용량/희석'), backgroundColor: Colors.teal[50]),
+      appBar: AppBar(
+        title: const Text('약물 용량/희석'),
+        backgroundColor: Colors.teal[50],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDisclaimerDialog(context),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [

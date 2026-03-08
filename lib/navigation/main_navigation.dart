@@ -3,6 +3,7 @@ import '../screens/iv_rate_screen.dart';
 import '../screens/dilution_screen.dart';
 import '../screens/remaining_time_screen.dart';
 import '../screens/tapping_screen.dart';
+import '../widgets/common_widgets.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -13,6 +14,14 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showDisclaimerDialog(context);
+    });
+  }
 
   final List<Widget> _screens = [
     const IvRateScreen(),

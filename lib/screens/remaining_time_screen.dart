@@ -32,7 +32,16 @@ class _RemainingTimeScreenState extends State<RemainingTimeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('수액 잔여 시간'), backgroundColor: Colors.orange[50]),
+      appBar: AppBar(
+        title: const Text('수액 잔여 시간'),
+        backgroundColor: Colors.orange[50],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDisclaimerDialog(context),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [

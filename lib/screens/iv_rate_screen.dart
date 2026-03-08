@@ -45,7 +45,16 @@ class _IvRateScreenState extends State<IvRateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('수액 속도 계산'), backgroundColor: Colors.indigo[50]),
+      appBar: AppBar(
+        title: const Text('수액 속도 계산'),
+        backgroundColor: Colors.indigo[50],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDisclaimerDialog(context),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
